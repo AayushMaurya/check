@@ -1,139 +1,130 @@
-var app = require('express')();
+const express = require("express");
+var app = express();
+const path = require("path");
 var http = require('http').Server(app);
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 3000;
 
 var io = require('socket.io')(http);
 
-app.get('/', function (req, res) {
-    res.sendFile(__dirname + '/index.html');
+// const http = require("http");
+// const websocketServer = require("websocket").server;
+// const express = require("express");
+// const path = require("path");
+// const app = express();
+
+const staticPath = path.join(__dirname, "../public");
+
+app.use(express.static(staticPath));
+
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/public/index.html");
 });
 
+app.get("/javascript", (req, res) => {
+    res.sendFile(__dirname + "/public/app.js");
+});
+
+app.get("/css", (req, res) => {
+    res.sendFile(__dirname + "/public/style/app.css");
+});
+
+// app.listen(9091, () => console.log("listening to port 9091"));
+
+
+// const httpServer = http.createServer();
+http.listen(port, () => {
+    console.log("server listening to port ", port);
+});
+
+// const wsServer = new websocketServer({
+//     "httpServer": httpServer
+// });
+
 const clients = {};
-const games = {};
 
-io.on('connection', function (connection) {
-    console.log('A user connected');
+io.on("connection", connection => {
+    console.log("A user connected");
+    // const connection = request.accept(null, request.origin);
+    // connection.on("open", () => console.log("connection opened"));
+    // connection.on("close", () => console.log("connection closed"));
+    connection.on("disconnect", ()=> console.log("A user disconnected"));
+    connection.on("message", message => {
 
-    //Whenever someone disconnects this piece of code executed
-    connection.on('disconnect', function () {
-        console.log('A user disconnected');
-    });
-
-    connection.on("message", (message) => {
         const result = JSON.parse(message);
-        // message will contain the message from the client
+        
         console.log(result);
 
-        // if user want to create a new game
-        if (result.method == "create") {
-            const clientId = result.clientId;
-            const gameId = guid();
-            games[gameId] = {
-                "id": gameId,
-                "balls": 20,
-                "clients": [],
-                "state": {}
+        if(result.method === "play")
+        {
+            const payload = {
+                "method": "play",
+                "player": result.player
             }
 
-            const payLoad = {
-                "method": "create",
-                "game": games[gameId]
-            }
-
-            const con = clients[clientId].connection;
-            con.emit("message", payLoad);
-
-            console.log("client ", clientId, "has created game ", gameId);
+           for(const c of Object.keys(clients)){
+               clients[c].connection.emit("message", payload);
+           }
         }
 
-        // joining a game
-        if (result.method == "join") {
-            const clientId = result.clientId;
-            const gameId = result.gameId;
-            const game = games[gameId];
-
-            if (game.clients.length >= 3) {
-                return;
+        if(result.method === "reset")
+        {
+            const payload = {
+                "method": "reset"
             }
 
-            const color = { "0": "Red", "1": "Green", "2": "Blue" }[game.clients.length];
+            for(const c of Object.keys(clients)){
+                clients[c].connection.emit("message", payload);
+            }
+        }
 
-            game.clients.push({
-                "clientId": clientId,
-                "color": color
-            });
-
-            console.log("client ", clientId, "has requested to join game ", gameId, "color assigned = ", color);
-
-            // start playing
-            if (game.clients.length == 3)
-                updateGameState();
-
-            const payLoad = {
-                "method": "join",
-                "game": game
+        if(result.method === "changeScore")
+        {
+            const payload = {
+                "method": "changeScore",
+                "value": result.value
             }
 
-            // tell all the clients about the newly added player
-            game.clients.forEach(c => {
-                clients[c.clientId].connection.emit("message", payLoad);
-            });
+            for(const c of Object.keys(clients)){
+                clients[c].connection.emit("message", payload);
+            }
         }
 
-        // user plays
-        if (result.method == "play") {
-            const gameId = result.gameId;
-            const ballId = result.ballId;
-            const color = result.color;
+        if(result.method === "over")
+        {
+            const payload = {
+                "method": "over"
+            }
 
-            const state = games[gameId].state;
-            // if(!state)
-            //     state = {};
-
-            state[ballId] = color;
-            games[gameId].state = state;
+            for(const c of Object.keys(clients)){
+                clients[c].connection.emit("message", payload);
+            }
         }
+
     });
 
+    // creating a new client id
     const clientId = guid();
+
+    // pushing new client
     clients[clientId] = {
         "connection": connection
     }
 
-    const payLoad = {
+    const payload = {
         "method": "connect",
         "clientId": clientId
     }
-    // send back the connect message
-    connection.emit("message", payLoad);
 
+    connection.emit("message", payload);
 });
 
-http.listen(port, function () {
-    console.log('listening on *:3000');
-});
 
-// this function is to create a unique ID 
+// functions for creating unique id
+
 function S4() {
     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
 }
 
 function guid() {
     return (S4() + S4() + "-" + S4() + "-4" + S4().substr(0, 3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
-}
-
-function updateGameState(){
-    for (const g of Object.keys(games)){
-
-        const payLoad = {
-            "method": "update",
-            "game" : games[g]   
-        }
-
-        games[g].clients.forEach(c => {
-            clients[c.clientId].connection.emit("message", payLoad);
-        });
-    }
-
-    setTimeout(updateGameState, 500);
 }
