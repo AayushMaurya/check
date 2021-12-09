@@ -25,7 +25,7 @@ app.get("/javascript", (req, res) => {
 });
 
 app.get("/css", (req, res) => {
-    res.sendFile(__dirname + "/public/style/app.css");
+    res.sendFile(__dirname + "/public/style/style.css");
 });
 
 // app.listen(9091, () => console.log("listening to port 9091"));
