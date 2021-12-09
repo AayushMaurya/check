@@ -2,5 +2,29 @@
   "dependencies": {
     "express": "^4.17.1",
     "socket.io": "^4.4.0"
-  }
+  },
+  "name": "check",
+  "version": "1.0.0",
+  "main": "index.js",
+  "engines": {
+    "npm": ">=7.15.1",
+    "node": ">=16.3.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AayushMaurya/check.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AayushMaurya/check/issues"
+  },
+  "homepage": "https://github.com/AayushMaurya/check#readme",
+  "description": ""
 }
