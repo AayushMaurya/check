@@ -14,7 +14,7 @@ var io = require('socket.io')(http);
 
 const staticPath = path.join(__dirname, "../public");
 
-app.use(express.static(staticPath));
+app.use(express.static(staticPath));        // now express will use the static path to get the pages
 
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/public/index.html");
@@ -40,7 +40,7 @@ http.listen(port, () => {
 //     "httpServer": httpServer
 // });
 
-const clients = {};
+// const clients = {};
 
 io.on("connection", connection => {
     console.log("A user connected");
@@ -61,9 +61,11 @@ io.on("connection", connection => {
                 "player": result.player
             }
 
-           for(const c of Object.keys(clients)){
-               clients[c].connection.emit("message", payload);
-           }
+            io.emit("message", payload);
+
+        //    for(const c of Object.keys(clients)){
+        //        clients[c].connection.emit("message", payload);
+        //    }
         }
 
         if(result.method === "reset")
@@ -72,9 +74,11 @@ io.on("connection", connection => {
                 "method": "reset"
             }
 
-            for(const c of Object.keys(clients)){
-                clients[c].connection.emit("message", payload);
-            }
+            io.emit("message", payload);
+
+            // for(const c of Object.keys(clients)){
+            //     clients[c].connection.emit("message", payload);
+            // }
         }
 
         if(result.method === "changeScore")
@@ -84,9 +88,11 @@ io.on("connection", connection => {
                 "value": result.value
             }
 
-            for(const c of Object.keys(clients)){
-                clients[c].connection.emit("message", payload);
-            }
+            io.emit("message", payload);
+
+            // for(const c of Object.keys(clients)){
+            //     clients[c].connection.emit("message", payload);
+            // }
         }
 
         if(result.method === "over")
@@ -95,27 +101,29 @@ io.on("connection", connection => {
                 "method": "over"
             }
 
-            for(const c of Object.keys(clients)){
-                clients[c].connection.emit("message", payload);
-            }
+            io.emit("message", payload);
+
+            // for(const c of Object.keys(clients)){
+            //     clients[c].connection.emit("message", payload);
+            // }
         }
 
     });
 
     // creating a new client id
-    const clientId = guid();
+    // const clientId = guid();
 
     // pushing new client
-    clients[clientId] = {
-        "connection": connection
-    }
+    // clients[clientId] = {
+    //     "connection": connection
+    // }
 
-    const payload = {
-        "method": "connect",
-        "clientId": clientId
-    }
+    // const payload = {
+    //     "method": "connect",
+    //     "clientId": clientId
+    // }
 
-    connection.emit("message", payload);
+    // connection.emit("message", payload);
 });
 
 
